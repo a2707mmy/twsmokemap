@@ -39,6 +39,14 @@ export async function fetchNearbyAreas(
     .sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0));
 }
 
+/**
+ * 取得所有（已核准）吸菸區，並附上與 center 的距離（供清單排序）。
+ * 重用 nearby RPC 搭配極大半徑，免額外 SQL；前端再依地圖視野過濾顯示。
+ */
+export async function fetchAllAreas(center: LatLng): Promise<SmokingArea[]> {
+  return fetchNearbyAreas(center, 100000); // 100km，足以涵蓋全台北
+}
+
 export interface NewSmokingArea {
   name: string;
   address?: string;

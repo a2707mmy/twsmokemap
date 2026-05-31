@@ -2,6 +2,9 @@
 
 export type LatLng = { lat: number; lng: number };
 
+/** 地圖目前可視範圍的邊界 */
+export type Bounds = { north: number; south: number; east: number; west: number };
+
 export type SmokingAreaKind = 'indoor' | 'outdoor';
 export type DataSource = 'official' | 'user';
 export type ModerationStatus = 'approved' | 'pending';

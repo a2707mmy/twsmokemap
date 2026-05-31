@@ -4,8 +4,8 @@ test.describe('台灣吸菸區地圖', () => {
   test('首頁載入並顯示找吸菸區', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: '台灣吸菸區地圖' })).toBeVisible();
-    // demo 模式應顯示至少一個吸菸區
-    await expect(page.getByText('找到').first()).toBeVisible();
+    // demo 模式地圖上應有吸菸區標記（桌機/手機皆可見）
+    await expect(page.getByRole('button', { name: '市民廣場旁吸菸區', exact: true })).toBeVisible();
   });
 
   test('可切換到回報煙味並看到表單', async ({ page }) => {
@@ -34,7 +34,8 @@ test.describe('台灣吸菸區地圖', () => {
 
   test('點選吸菸區顯示詳情與導航連結', async ({ page }) => {
     await page.goto('/');
-    await page.getByText('市民廣場旁吸菸區').first().click();
+    // 點地圖上的標記（桌機/手機清單顯示方式不同，標記在兩者皆可點）
+    await page.getByRole('button', { name: '市民廣場旁吸菸區', exact: true }).click();
     const nav = page.getByRole('link', { name: '以 Google Maps 導航' });
     await expect(nav).toBeVisible();
     await expect(nav).toHaveAttribute('href', /google\.com\/maps\/dir/);

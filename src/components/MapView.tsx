@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { APIProvider, AdvancedMarker, Map, Pin, useMap } from '@vis.gl/react-google-maps';
 import { GOOGLE_MAPS_API_KEY, HAS_GOOGLE_MAPS } from '../lib/config';
-import type { LatLng, SmellReport, SmokingArea } from '../lib/types';
+import type { Bounds, LatLng, SmellReport, SmokingArea } from '../lib/types';
 
 export interface MapViewProps {
   center: LatLng;
@@ -12,6 +12,8 @@ export interface MapViewProps {
   /** 回報模式：點地圖選位置 */
   pickedPoint?: LatLng | null;
   onPick?: (p: LatLng) => void;
+  /** 地圖視野（縮放/拖曳）改變時回報目前可視邊界 */
+  onBoundsChange?: (b: Bounds) => void;
 }
 
 const AREA_COLORS = {
@@ -49,6 +51,7 @@ function GoogleMapView({
   smellReports,
   pickedPoint,
   onPick,
+  onBoundsChange,
 }: MapViewProps) {
   return (
     <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
@@ -64,6 +67,14 @@ function GoogleMapView({
         onClick={(e) => {
           const ll = e.detail.latLng;
           if (ll && onPick) onPick({ lat: ll.lat, lng: ll.lng });
+        }}
+        onIdle={(e) => {
+          if (!onBoundsChange) return;
+          const b = e.map.getBounds();
+          if (!b) return;
+          const ne = b.getNorthEast();
+          const sw = b.getSouthWest();
+          onBoundsChange({ north: ne.lat(), east: ne.lng(), south: sw.lat(), west: sw.lng() });
         }}
       >
         <MapController center={center} />

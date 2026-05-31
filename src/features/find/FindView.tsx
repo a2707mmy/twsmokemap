@@ -1,23 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import MapView from '../../components/MapView';
 import { useGeolocation } from '../../hooks/useGeolocation';
-import { fetchNearbyAreas } from '../../lib/data';
-import { DEFAULT_RADIUS_M } from '../../lib/config';
-import type { SmokingArea, SmokingAreaKind } from '../../lib/types';
+import { fetchAllAreas } from '../../lib/data';
+import type { Bounds, SmokingArea, SmokingAreaKind } from '../../lib/types';
 import AreaList from './AreaList';
 import AreaDetail from './AreaDetail';
 
-const RADIUS_OPTIONS = [
-  { value: 500, label: '500 公尺' },
-  { value: 1000, label: '1 公里' },
-  { value: 2000, label: '2 公里' },
-  { value: 5000, label: '5 公里' },
-];
+/** 某點是否落在地圖目前可視範圍內 */
+function inBounds(a: SmokingArea, b: Bounds): boolean {
+  return a.lat <= b.north && a.lat >= b.south && a.lng <= b.east && a.lng >= b.west;
+}
 
 export default function FindView() {
   const { center, status, message, locate } = useGeolocation();
-  const [radius, setRadius] = useState(DEFAULT_RADIUS_M);
-  const [areas, setAreas] = useState<SmokingArea[]>([]);
+  const [allAreas, setAllAreas] = useState<SmokingArea[]>([]);
+  const [bounds, setBounds] = useState<Bounds | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false); // 手機底部清單是否展開
@@ -30,47 +27,48 @@ export default function FindView() {
     locate();
   }, [locate]);
 
+  // 載入全部吸菸區（依距離排序）；之後由地圖視野決定顯示哪些
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetchNearbyAreas(center, radius)
-      .then((data) => active && setAreas(data))
-      .catch(() => active && setAreas([]))
+    fetchAllAreas(center)
+      .then((data) => active && setAllAreas(data))
+      .catch(() => active && setAllAreas([]))
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
     };
-  }, [center, radius]);
+  }, [center]);
 
-  const filtered = useMemo(
+  // 顯示：目前地圖視野內 + 套用篩選（視野未知前先全部顯示）
+  const visible = useMemo(
     () =>
-      areas.filter(
+      allAreas.filter(
         (a) =>
+          (!bounds || inBounds(a, bounds)) &&
           (kindFilter === 'all' || a.kind === kindFilter) &&
           (!officialOnly || a.source === 'official'),
       ),
-    [areas, kindFilter, officialOnly],
+    [allAreas, bounds, kindFilter, officialOnly],
   );
 
-  const selected = filtered.find((a) => a.id === selectedId) ?? null;
+  const selected = visible.find((a) => a.id === selectedId) ?? null;
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
-    setSheetOpen(false); // 選到地點時收起手機清單，改顯示詳情
+    setSheetOpen(false);
   };
 
   const panelProps = {
     status,
     message,
     locate,
-    radius,
-    setRadius,
     kindFilter,
     setKindFilter,
     officialOnly,
     setOfficialOnly,
-    count: filtered.length,
-    areas: filtered,
+    count: visible.length,
+    areas: visible,
     selectedId,
     onSelect: handleSelect,
     loading,
@@ -87,16 +85,17 @@ export default function FindView() {
       <div className="relative flex-1">
         <MapView
           center={center}
-          areas={filtered}
+          areas={visible}
           selectedId={selectedId}
           onSelectArea={handleSelect}
+          onBoundsChange={setBounds}
         />
 
         {/* 手機：定位狀態提示（不論底部清單是否展開都看得到） */}
         {(status === 'locating' ||
           ((status === 'denied' || status === 'unavailable') && message)) && (
           <div className="absolute left-1/2 top-3 z-30 max-w-[64%] -translate-x-1/2 rounded-full bg-slate-900/85 px-4 py-2 text-center text-xs leading-snug text-white shadow-lg sm:hidden">
-            {status === 'locating' ? '定位中，請允許瀏覽器存取位置…' : message}
+            {status === 'locating' ? '定位中,請允許瀏覽器存取位置…' : message}
           </div>
         )}
 
@@ -124,7 +123,7 @@ export default function FindView() {
               <span className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
               <span className="flex w-full items-center justify-between">
                 <span className="text-sm font-semibold text-slate-800">
-                  附近吸菸區 · {filtered.length} 個
+                  畫面內吸菸區 · {visible.length} 個
                 </span>
                 <span
                   className={`text-slate-400 transition-transform ${sheetOpen ? 'rotate-180' : ''}`}
@@ -151,8 +150,6 @@ interface AreaPanelProps {
   status: string;
   message: string | null;
   locate: () => void;
-  radius: number;
-  setRadius: (n: number) => void;
   kindFilter: SmokingAreaKind | 'all';
   setKindFilter: (k: SmokingAreaKind | 'all') => void;
   officialOnly: boolean;
@@ -176,20 +173,7 @@ function AreaPanel(p: AreaPanelProps) {
         >
           {p.status === 'locating' ? '定位中…' : '📍 我的位置'}
         </button>
-        <label className="ml-auto text-xs text-slate-500">
-          範圍
-          <select
-            value={p.radius}
-            onChange={(e) => p.setRadius(Number(e.target.value))}
-            className="ml-1 rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-700"
-          >
-            {RADIUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <span className="ml-auto text-xs text-slate-400">移動地圖即可看不同區域</span>
       </div>
 
       {/* 篩選 */}
@@ -221,7 +205,7 @@ function AreaPanel(p: AreaPanelProps) {
       {/* 清單 */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         {!p.hideCount && (
-          <p className="px-4 pt-3 text-xs text-slate-400">找到 {p.count} 個吸菸區</p>
+          <p className="px-4 pt-3 text-xs text-slate-400">畫面內 {p.count} 個吸菸區</p>
         )}
         <AreaList
           areas={p.areas}

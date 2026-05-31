@@ -80,6 +80,19 @@
 
 ---
 
+## 2026-05-31｜上線後使用者回饋調整（第二輪）
+
+- **定位（我的位置）**：高精度失敗自動以低精度重試、錯誤訊息更明確；新增 `MapController` 讓定位更新時地圖會平移到使用者位置；手機浮動定位鈕移到右上角避開縮放控制，並把定位狀態做成地圖上的提示。
+- **地圖簡化**：移除衛星/地形（`mapTypeControl`）、街景、全螢幕控制。
+- **改為「依地圖視野顯示」**：移除固定「搜尋範圍」設定，改為顯示目前地圖可視範圍內的所有吸菸點（縮放/拖曳即時更新）。新增 `fetchAllAreas`（重用 nearby RPC 大半徑）、`Bounds` 型別、`MapView.onBoundsChange`（`onIdle` 讀 `getBounds`）。已驗證：預設縮放 17 個、縮到全台北 201 個。
+- **測試改為 hermetic（重要）**：發現 `.env` 存在後，`npm run test`/E2E 會連到正式 Supabase，甚至 insert 測試列。修正：
+  - Vitest 在 `vite.config.ts` 用 `test.env` 清空金鑰 → 一律 demo 模式。
+  - Playwright 改在 5174 埠啟動專屬 demo-mode server（`reuseExistingServer:false` + 清空金鑰 env），E2E 點地圖標記（桌機/手機皆可見）而非清單項目。
+  - 清掉先前測試誤插入的 2 筆 pending 測試列（`scripts/cleanup-test-rows.mjs`）。
+- 單元 11/11、E2E 10/10 全綠。
+
+---
+
 ## 2026-05-31｜上線前補強：資料匯入與 SEO
 
 - **資料匯入**：使用者用新版 Supabase 金鑰遇到 `permission denied for table` →
