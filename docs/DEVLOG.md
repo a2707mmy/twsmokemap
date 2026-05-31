@@ -91,6 +91,12 @@
   - 清掉先前測試誤插入的 2 筆 pending 測試列（`scripts/cleanup-test-rows.mjs`）。
 - 單元 11/11、E2E 10/10 全綠。
 
+### 修正：點定位後地圖不平移
+- 原因：`MapController` 用「中心座標變了才平移」，若使用者拖開地圖後再按定位、而瀏覽器回傳相同的快取座標，會被判定為「沒變」而不平移。
+- 解法：`useGeolocation` 每次成功定位遞增 `locateTick`，`MapView.recenterKey` 以此為訊號，每次定位都強制 `panTo` + `setZoom(16)`（即使座標相同）。`ReportView` 同步：「用我目前的位置」會把回報點移到使用者位置。
+- 已用 Playwright 驗證：定位 12 個 → 拖開 4 個 → 再定位回到 12 個。
+- 附帶釐清：改用「依視野顯示」不會增加 Google Maps 流量（計費以地圖載入次數計，縮放/拖曳不計費；資料來自 Supabase 且改為一次抓取）。
+
 ---
 
 ## 2026-05-31｜上線前補強：資料匯入與 SEO

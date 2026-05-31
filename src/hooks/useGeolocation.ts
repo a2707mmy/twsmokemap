@@ -11,6 +11,9 @@ export function useGeolocation() {
   const [center, setCenter] = useState<LatLng>(TAIPEI_CENTER);
   const [status, setStatus] = useState<GeoStatus>('idle');
   const [message, setMessage] = useState<string | null>(null);
+  // 每次成功定位都遞增；地圖以此為訊號「強制平移到使用者位置」，
+  // 即使座標與上次相同（例如使用者手動拖開地圖後再按定位）也會回到所在位置。
+  const [locateTick, setLocateTick] = useState(0);
 
   const locate = useCallback(() => {
     if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
@@ -26,6 +29,7 @@ export function useGeolocation() {
       setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       setStatus('granted');
       setMessage(null);
+      setLocateTick((t) => t + 1);
     };
 
     const onError = (err: GeolocationPositionError) => {
@@ -62,5 +66,5 @@ export function useGeolocation() {
     });
   }, []);
 
-  return { center, status, message, locate, setCenter };
+  return { center, status, message, locateTick, locate, setCenter };
 }

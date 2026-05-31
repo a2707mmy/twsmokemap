@@ -13,7 +13,7 @@ import {
 } from '../../lib/types';
 
 export default function ReportView() {
-  const { center, locate } = useGeolocation();
+  const { center, locateTick, locate } = useGeolocation();
   const [point, setPoint] = useState<LatLng | null>(null);
   const [reports, setReports] = useState<SmellReport[]>([]);
   const [reportType, setReportType] = useState<ReportType>(2);
@@ -35,6 +35,12 @@ export default function ReportView() {
   useEffect(() => {
     setPoint((p) => p ?? center);
   }, [center]);
+
+  // 按「用我目前的位置」成功定位後，把回報點移到使用者所在位置
+  useEffect(() => {
+    if (locateTick > 0) setPoint(center);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locateTick]);
 
   async function submit() {
     if (!point) {
@@ -95,6 +101,7 @@ export default function ReportView() {
           smellReports={reports}
           pickedPoint={point}
           onPick={(p) => setPoint(p)}
+          recenterKey={locateTick}
         />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/40 to-transparent p-3 text-center text-xs text-white">
           紅點為大家回報的煙味熱區 · 點地圖可調整你的回報位置

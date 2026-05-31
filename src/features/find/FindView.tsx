@@ -12,7 +12,7 @@ function inBounds(a: SmokingArea, b: Bounds): boolean {
 }
 
 export default function FindView() {
-  const { center, status, message, locate } = useGeolocation();
+  const { center, status, message, locateTick, locate } = useGeolocation();
   const [allAreas, setAllAreas] = useState<SmokingArea[]>([]);
   const [bounds, setBounds] = useState<Bounds | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,6 +89,7 @@ export default function FindView() {
           selectedId={selectedId}
           onSelectArea={handleSelect}
           onBoundsChange={setBounds}
+          recenterKey={locateTick}
         />
 
         {/* 手機：定位狀態提示（不論底部清單是否展開都看得到） */}

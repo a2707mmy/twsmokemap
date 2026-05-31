@@ -14,6 +14,8 @@ export interface MapViewProps {
   onPick?: (p: LatLng) => void;
   /** 地圖視野（縮放/拖曳）改變時回報目前可視邊界 */
   onBoundsChange?: (b: Bounds) => void;
+  /** 每次成功定位遞增；變動時地圖強制平移＋拉近到 center */
+  recenterKey?: number;
 }
 
 const AREA_COLORS = {
@@ -27,18 +29,21 @@ export default function MapView(props: MapViewProps) {
   return HAS_GOOGLE_MAPS ? <GoogleMapView {...props} /> : <SchematicMap {...props} />;
 }
 
-// 當定位（center）改變時，把地圖平移過去（讓「我的位置」真的會移動地圖）
-function MapController({ center }: { center: LatLng }) {
+// 每次成功定位（recenterKey 遞增）就把地圖平移＋拉近到使用者位置，
+// 即使座標與上次相同（手動拖開後再按定位）也會回到所在位置。
+function MapController({ center, recenterKey }: { center: LatLng; recenterKey?: number }) {
   const map = useMap();
-  const last = useRef<string>('');
+  const centerRef = useRef(center);
+  centerRef.current = center;
+  const lastKey = useRef<number | undefined>(undefined);
   useEffect(() => {
-    if (!map) return;
-    const key = `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`;
-    if (key !== last.current) {
-      last.current = key;
-      map.panTo(center);
+    if (!map || recenterKey == null || recenterKey === 0) return;
+    if (recenterKey !== lastKey.current) {
+      lastKey.current = recenterKey;
+      map.panTo(centerRef.current);
+      map.setZoom(16);
     }
-  }, [map, center]);
+  }, [map, recenterKey]);
   return null;
 }
 
@@ -52,6 +57,7 @@ function GoogleMapView({
   pickedPoint,
   onPick,
   onBoundsChange,
+  recenterKey,
 }: MapViewProps) {
   return (
     <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
@@ -77,7 +83,7 @@ function GoogleMapView({
           onBoundsChange({ north: ne.lat(), east: ne.lng(), south: sw.lat(), west: sw.lng() });
         }}
       >
-        <MapController center={center} />
+        <MapController center={center} recenterKey={recenterKey} />
         {/* 使用者位置 */}
         <AdvancedMarker position={center} title="你的位置">
           <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow" />
