@@ -24,6 +24,10 @@ const AREA_COLORS = {
   glyph: '#ffffff',
 };
 
+/** 過濾掉座標無效（NaN/undefined）的項目，避免地圖標記崩潰 */
+const hasValidCoords = <T extends { lat: number; lng: number }>(x: T) =>
+  Number.isFinite(x.lat) && Number.isFinite(x.lng);
+
 /** 對外的地圖元件：有金鑰用 Google Maps，否則用示意地圖。 */
 export default function MapView(props: MapViewProps) {
   return HAS_GOOGLE_MAPS ? <GoogleMapView {...props} /> : <SchematicMap {...props} />;
@@ -90,14 +94,14 @@ function GoogleMapView({
         </AdvancedMarker>
 
         {/* 煙味回報（紅點，半透明） */}
-        {smellReports?.map((r) => (
+        {smellReports?.filter(hasValidCoords).map((r) => (
           <AdvancedMarker key={r.id} position={{ lat: r.lat, lng: r.lng }}>
             <div className="h-3 w-3 rounded-full bg-smell/60 ring-2 ring-smell/30" />
           </AdvancedMarker>
         ))}
 
         {/* 吸菸區 */}
-        {areas.map((a) => (
+        {areas.filter(hasValidCoords).map((a) => (
           <AdvancedMarker
             key={a.id}
             position={{ lat: a.lat, lng: a.lng }}
@@ -161,7 +165,7 @@ function SchematicMap({
       </div>
 
       {/* 煙味回報 */}
-      {smellReports?.map((r) => {
+      {smellReports?.filter(hasValidCoords).map((r) => {
         const { x, y } = project({ lat: r.lat, lng: r.lng }, center);
         return (
           <span
@@ -180,7 +184,7 @@ function SchematicMap({
       />
 
       {/* 吸菸區標記 */}
-      {areas.map((a) => {
+      {areas.filter(hasValidCoords).map((a) => {
         const { x, y } = project({ lat: a.lat, lng: a.lng }, center);
         const selected = selectedId === a.id;
         return (

@@ -94,10 +94,10 @@ export async function addSmokingArea(input: NewSmokingArea): Promise<void> {
 
 // ── 煙味回報 ────────────────────────────────────────────
 
-/** 取得所有煙味回報（用於熱區圖）。 */
+/** 取得所有煙味回報（用於熱區圖）。透過 RPC 取出 lat/lng（location 為 PostGIS 欄位）。 */
 export async function fetchSmellReports(): Promise<SmellReport[]> {
   if (HAS_SUPABASE && supabase) {
-    const { data, error } = await supabase.from('smell_reports').select('*');
+    const { data, error } = await supabase.rpc('all_smell_reports');
     if (error) throw error;
     return (data ?? []) as SmellReport[];
   }

@@ -97,6 +97,10 @@
 - 已用 Playwright 驗證：定位 12 個 → 拖開 4 個 → 再定位回到 12 個。
 - 附帶釐清：改用「依視野顯示」不會增加 Google Maps 流量（計費以地圖載入次數計，縮放/拖曳不計費；資料來自 Supabase 且改為一次抓取）。
 
+### 修正：點「回報煙味」整頁空白
+- 原因：`fetchSmellReports` 用 `select('*')` 取回，但座標存在 PostGIS `location` 欄位、沒有 lat/lng → `AdvancedMarker` 收到 `lat: undefined` 丟出 `InvalidValueError`，React 無 error boundary 整棵卸載 → 空白。demo 範例有 lat/lng 故只在線上真實資料出現。
+- 解法：新增 `all_smell_reports()` RPC（st_y/st_x 轉 lat/lng），`fetchSmellReports` 改用它；並在 `MapView` 加 `hasValidCoords` 防呆，座標無效就跳過標記（即使資料異常也不再崩潰）。RPC 未建立時錯誤被 catch → 回報頁仍正常、只是暫無熱區。
+
 ---
 
 ## 2026-05-31｜上線前補強：資料匯入與 SEO

@@ -100,6 +100,31 @@ as $$
   update public.smoking_areas set upvotes = upvotes + 1 where id = area_id;
 $$;
 
+-- 5b. 取得所有煙味回報（含 lat/lng；location 為 PostGIS 欄位需轉換）------
+create or replace function public.all_smell_reports()
+returns table (
+  id uuid,
+  lat double precision,
+  lng double precision,
+  report_type smallint,
+  time_slot text,
+  note text,
+  created_at timestamptz
+)
+language sql
+stable
+as $$
+  select
+    id,
+    st_y(location::geometry) as lat,
+    st_x(location::geometry) as lng,
+    report_type,
+    time_slot,
+    note,
+    created_at
+  from public.smell_reports;
+$$;
+
 -- 6. 授權（GRANT）--------------------------------------------
 -- 新版 Supabase 金鑰（publishable/secret）對應的角色不會自動取得資料表權限，
 -- 需明確授權；實際存取仍受上方 RLS 政策約束。
@@ -109,3 +134,4 @@ grant all on public.smoking_areas, public.smell_reports to service_role;
 grant execute on function public.nearby_smoking_areas(double precision, double precision, double precision)
   to anon, authenticated, service_role;
 grant execute on function public.upvote_smoking_area(uuid) to anon, authenticated, service_role;
+grant execute on function public.all_smell_reports() to anon, authenticated, service_role;
