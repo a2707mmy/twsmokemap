@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { HAS_GOOGLE_MAPS, HAS_SUPABASE } from './lib/config';
+import FindView from './features/find/FindView';
 
 type Tab = 'find' | 'report' | 'rules';
 
@@ -57,7 +58,7 @@ export default function App() {
 
       {/* 內容區 */}
       <main className="relative flex-1 overflow-hidden">
-        <PlaceholderView tab={tab} />
+        {tab === 'find' ? <FindView /> : <PlaceholderView tab={tab} />}
       </main>
 
       {/* 手機：底部導覽 */}
