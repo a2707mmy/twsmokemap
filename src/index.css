@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+  }
+}
+
+@layer components {
+  /* 安全區（iPhone 瀏海/底部）padding，手機底部導覽用 */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

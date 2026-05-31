@@ -1,0 +1,26 @@
+# 相依套件
+node_modules/
+
+# 建置產物
+dist/
+dist-ssr/
+*.local
+
+# 環境變數（金鑰，切勿提交）
+.env
+.env.*
+!.env.example
+
+# 測試 / 工具產物
+coverage/
+playwright-report/
+test-results/
+screenshots/
+
+# 編輯器 / 系統
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.log
+npm-debug.log*
