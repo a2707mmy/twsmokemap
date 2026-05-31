@@ -92,11 +92,20 @@ export default function FindView() {
           onSelectArea={handleSelect}
         />
 
-        {/* 手機：浮動「我的位置」按鈕 */}
+        {/* 手機：定位狀態提示（不論底部清單是否展開都看得到） */}
+        {(status === 'locating' ||
+          ((status === 'denied' || status === 'unavailable') && message)) && (
+          <div className="absolute left-1/2 top-3 z-30 max-w-[64%] -translate-x-1/2 rounded-full bg-slate-900/85 px-4 py-2 text-center text-xs leading-snug text-white shadow-lg sm:hidden">
+            {status === 'locating' ? '定位中，請允許瀏覽器存取位置…' : message}
+          </div>
+        )}
+
+        {/* 手機：浮動「我的位置」按鈕（置右上，避開地圖縮放控制） */}
         <button
           onClick={locate}
           aria-label="定位我的位置"
-          className="absolute right-3 bottom-20 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl shadow-lg ring-1 ring-slate-200 active:scale-95 sm:hidden"
+          className="absolute right-3 top-3 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow-lg ring-1 ring-slate-200 active:scale-95 disabled:opacity-60 sm:hidden"
+          disabled={status === 'locating'}
         >
           {status === 'locating' ? '⏳' : '📍'}
         </button>
