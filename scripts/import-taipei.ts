@@ -10,7 +10,7 @@
  * 資料來源：https://data.gov.tw/dataset/177504
  * 政府資料開放授權條款第 1 版。
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
 const CSV_URL =
@@ -92,34 +92,63 @@ async function main() {
         name: (r[iName] || '吸菸區').trim(),
         address: (r[iAddress] || '').trim() || null,
         district: (r[iDistrict] || '').trim() || null,
+        lat,
+        lng,
         location: `SRID=4326;POINT(${lng} ${lat})`,
         kind: (r[iKind] || '').includes('室內') ? 'indoor' : 'outdoor',
-        source: 'official',
-        status: 'approved',
+        source: 'official' as const,
+        status: 'approved' as const,
         note: noteParts.join('｜') || null,
       };
     })
-    .filter((r) => Number.isFinite(parseFloat(r.location.split(' ')[1])));
+    .filter((r) => Number.isFinite(r.lat) && Number.isFinite(r.lng));
 
   console.log(`✓ 解析到 ${records.length} 筆有效資料`);
 
-  const supabase = createClient(SUPABASE_URL!, SERVICE_KEY!);
+  // ── 一律產生 SQL 種子檔（可直接貼到 Supabase SQL Editor，免金鑰、免權限問題） ──
+  const sqlEsc = (s: string | null) => (s == null ? 'null' : `'${s.replace(/'/g, "''")}'`);
+  const values = records
+    .map(
+      (r) =>
+        `  (${sqlEsc(r.name)}, ${sqlEsc(r.address)}, ${sqlEsc(r.district)}, ` +
+        `st_setsrid(st_makepoint(${r.lng}, ${r.lat}), 4326)::geography, ` +
+        `'${r.kind}', 'official', 'approved', ${sqlEsc(r.note)})`,
+    )
+    .join(',\n');
+  const sql =
+    `-- 台北市指定吸菸區種子資料（由 scripts/import-taipei.ts 產生，共 ${records.length} 筆）\n` +
+    `-- 用法：整段貼到 Supabase SQL Editor 按 Run。\n` +
+    `delete from public.smoking_areas where source = 'official';\n` +
+    `insert into public.smoking_areas (name, address, district, location, kind, source, status, note) values\n` +
+    `${values};\n`;
+  writeFileSync('supabase/seed-taipei.sql', sql, 'utf8');
+  console.log('✓ 已產生 SQL 種子檔：supabase/seed-taipei.sql（可直接在 SQL Editor 執行）');
 
-  // 先清掉舊的官方資料，避免重複（眾包 user 資料保留）
-  await supabase.from('smoking_areas').delete().eq('source', 'official');
-
-  // 分批寫入
-  const BATCH = 100;
-  let inserted = 0;
-  for (let i = 0; i < records.length; i += BATCH) {
-    const batch = records.slice(i, i + BATCH);
-    const { error } = await supabase.from('smoking_areas').insert(batch);
-    if (error) throw error;
-    inserted += batch.length;
-    console.log(`  寫入 ${inserted}/${records.length}…`);
+  // ── 若有設定後端金鑰，嘗試用 API 直接寫入（失敗則改用上面的 SQL 檔） ──
+  if (!SUPABASE_URL || !SERVICE_KEY) {
+    console.log('（未設定 SUPABASE_URL / SERVICE_ROLE_KEY，略過 API 寫入，請改執行 SQL 種子檔。）');
+    return;
   }
 
-  console.log(`✓ 完成！共匯入 ${inserted} 筆台北市吸菸區。`);
+  try {
+    const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+    await supabase.from('smoking_areas').delete().eq('source', 'official');
+    const BATCH = 100;
+    let inserted = 0;
+    for (let i = 0; i < records.length; i += BATCH) {
+      const batch = records.slice(i, i + BATCH).map(({ lat: _lat, lng: _lng, ...rest }) => rest);
+      const { error } = await supabase.from('smoking_areas').insert(batch);
+      if (error) throw error;
+      inserted += batch.length;
+      console.log(`  寫入 ${inserted}/${records.length}…`);
+    }
+    console.log(`✓ 完成！已透過 API 匯入 ${inserted} 筆台北市吸菸區。`);
+  } catch (e) {
+    const msg = (e as { message?: string })?.message ?? String(e);
+    console.warn(`\n⚠ API 寫入失敗（${msg}）。`);
+    console.warn('   這通常是新版 sb_secret 金鑰的權限問題。');
+    console.warn('   請改用備援方式：把 supabase/seed-taipei.sql 整段貼到 Supabase SQL Editor 按 Run 即可完成匯入。');
+  }
 }
 
 main().catch((e) => {
