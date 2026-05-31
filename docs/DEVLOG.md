@@ -91,3 +91,15 @@
   - 加入 `robots.txt`、`sitemap.xml`、Open Graph / Twitter Card、JSON-LD（WebApplication）、`<noscript>` 靜態內容、強化 meta。
   - 用 Playwright 渲染產生社群分享縮圖 `public/og-image.png`（1200×630）。
   - 待使用者部署後：把正式網址更新進 canonical/OG/sitemap，並到 Google Search Console 提交網站與 sitemap。
+
+---
+
+## 2026-05-31｜正式上線與線上除錯
+
+- **已上線**：<https://twsmokemap.vercel.app/>（Vercel）。正式網址正好等於先前 hardcode 的網址，canonical/OG/sitemap 無需更動。
+- **線上才出現的兩個問題與解法**：
+  1. Google 地圖載入失敗 → API 金鑰未把正式網域加進 HTTP 參照網址限制 → 補上 `https://twsmokemap.vercel.app/*`。
+  2. 吸菸區 0 筆 → Vercel 的 `VITE_SUPABASE_URL` 值被重複貼成三段，請求網址變成 `...supabase.cohttps//...`，`ERR_NAME_NOT_RESOLVED` → 重設為單一網址並 Redeploy。
+  - 除錯關鍵：寫 `scripts/diag-prod.mjs` 用 Playwright 攔截線上 console 錯誤與失敗請求，一眼看出被打壞的網址。
+- **Lighthouse（桌機）**：Performance 88 / Accessibility 94 / Best Practices 96 / **SEO 100**；LCP 2.0s、CLS 0、TBT 0ms。核心 Web Vitals 全達標。
+- **專案狀態：已完整上線、可供一般民眾使用。** 後續加值：地圖延遲載入推效能上 90+、Google Search Console 提交、自訂網域。
