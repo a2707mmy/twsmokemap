@@ -77,3 +77,17 @@
 | Playwright 行動測試需 WebKit | 改用 Chromium 的 Pixel 5 模擬，省下載 |
 
 **成果**：響應式網站、三大功能齊備、單元 + E2E 測試全綠、文件完整、已上架 GitHub。預期金鑰與帳號就緒後即可一鍵部署上線。
+
+---
+
+## 2026-05-31｜上線前補強：資料匯入與 SEO
+
+- **資料匯入**：使用者用新版 Supabase 金鑰遇到 `permission denied for table` →
+  原因是新版 publishable/secret 金鑰角色未自動取得資料表 GRANT。
+  解法：(1) import 腳本改為產生 `supabase/seed-taipei.sql` 種子檔，直接在 SQL Editor 執行匯入（201 筆）；
+  (2) schema.sql 補上明確 GRANT。已驗證前端 anon 金鑰讀取、附近搜尋 RPC 正常（台北市府 2km 內 35 筆）。
+- **SEO（基本包，為了讓一般民眾搜尋得到）**：
+  - 釐清：Vercel（CSR SPA）部署不傷 SEO，但純前端渲染對非 Google 爬蟲與社群分享預覽不友善。
+  - 加入 `robots.txt`、`sitemap.xml`、Open Graph / Twitter Card、JSON-LD（WebApplication）、`<noscript>` 靜態內容、強化 meta。
+  - 用 Playwright 渲染產生社群分享縮圖 `public/og-image.png`（1200×630）。
+  - 待使用者部署後：把正式網址更新進 canonical/OG/sitemap，並到 Google Search Console 提交網站與 sitemap。
