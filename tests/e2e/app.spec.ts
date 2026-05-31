@@ -32,12 +32,22 @@ test.describe('台灣吸菸區地圖', () => {
     await expect(page.getByText('哪裡禁菸？')).toBeVisible();
   });
 
-  test('點選吸菸區顯示詳情與導航連結', async ({ page }) => {
+  test('點選吸菸區顯示詳情、導航連結為走路模式', async ({ page }) => {
     await page.goto('/');
     // 點地圖上的標記（桌機/手機清單顯示方式不同，標記在兩者皆可點）
     await page.getByRole('button', { name: '市民廣場旁吸菸區', exact: true }).click();
     const nav = page.getByRole('link', { name: '以 Google Maps 導航' });
     await expect(nav).toBeVisible();
     await expect(nav).toHaveAttribute('href', /google\.com\/maps\/dir/);
+    await expect(nav).toHaveAttribute('href', /travelmode=walking/);
+  });
+
+  test('聯繫開發者可送出訊息', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: '聯繫開發者' }).click();
+    await expect(page.getByRole('heading', { name: '聯繫開發者' })).toBeVisible();
+    await page.getByLabel('你想說的話').fill('這是一則測試建議');
+    await page.getByRole('button', { name: '送出訊息' }).click();
+    await expect(page.getByRole('heading', { name: '感謝你的訊息！' })).toBeVisible();
   });
 });

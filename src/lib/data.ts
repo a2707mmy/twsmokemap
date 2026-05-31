@@ -135,3 +135,23 @@ export async function addSmellReport(input: NewSmellReport): Promise<void> {
     created_at: new Date().toISOString(),
   });
 }
+
+// ── 聯繫開發者（意見回饋） ──────────────────────────────────
+export interface NewFeedback {
+  message: string;
+  contact?: string;
+}
+
+/** 送出使用者意見／建議。開發者於 Supabase 後台檢視。 */
+export async function addFeedback(input: NewFeedback): Promise<void> {
+  if (HAS_SUPABASE && supabase) {
+    const { error } = await supabase.from('feedback').insert({
+      message: input.message,
+      contact: input.contact ?? null,
+    });
+    if (error) throw error;
+    return;
+  }
+  // demo 模式：無後端，僅在 console 記錄
+  console.info('[demo] feedback:', input);
+}

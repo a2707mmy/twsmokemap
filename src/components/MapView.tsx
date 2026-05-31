@@ -21,6 +21,7 @@ export interface MapViewProps {
 const AREA_COLORS = {
   officialBg: '#0b7575',
   crowdBg: '#d97706',
+  selectedBg: '#dc2626', // 選中＝紅色，最顯眼
   glyph: '#ffffff',
 };
 
@@ -108,10 +109,16 @@ function GoogleMapView({
             onClick={() => onSelectArea?.(a.id)}
           >
             <Pin
-              background={a.source === 'official' ? AREA_COLORS.officialBg : AREA_COLORS.crowdBg}
+              background={
+                selectedId === a.id
+                  ? AREA_COLORS.selectedBg
+                  : a.source === 'official'
+                    ? AREA_COLORS.officialBg
+                    : AREA_COLORS.crowdBg
+              }
               borderColor="#ffffff"
               glyphColor={AREA_COLORS.glyph}
-              scale={selectedId === a.id ? 1.4 : 1}
+              scale={selectedId === a.id ? 1.6 : 1}
             />
           </AdvancedMarker>
         ))}
@@ -198,7 +205,7 @@ function SchematicMap({
             <svg width="26" height="34" viewBox="0 0 26 34" aria-hidden>
               <path
                 d="M13 0C5.8 0 0 5.8 0 13c0 9 13 21 13 21s13-12 13-21C26 5.8 20.2 0 13 0z"
-                fill={a.source === 'official' ? '#0b7575' : '#d97706'}
+                fill={selected ? '#dc2626' : a.source === 'official' ? '#0b7575' : '#d97706'}
                 stroke="#fff"
                 strokeWidth="2"
               />

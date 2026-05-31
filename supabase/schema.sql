@@ -125,6 +125,18 @@ as $$
   from public.smell_reports;
 $$;
 
+-- 5c. 意見回饋（聯繫開發者）----------------------------------
+create table if not exists public.feedback (
+  id          uuid primary key default gen_random_uuid(),
+  message     text not null,
+  contact     text,
+  created_at  timestamptz not null default now()
+);
+alter table public.feedback enable row level security;
+-- 任何人可送出意見，但不開放讀取（保護隱私，開發者由後台檢視）
+drop policy if exists "insert feedback" on public.feedback;
+create policy "insert feedback" on public.feedback for insert with check (true);
+
 -- 6. 授權（GRANT）--------------------------------------------
 -- 新版 Supabase 金鑰（publishable/secret）對應的角色不會自動取得資料表權限，
 -- 需明確授權；實際存取仍受上方 RLS 政策約束。
@@ -135,3 +147,5 @@ grant execute on function public.nearby_smoking_areas(double precision, double p
   to anon, authenticated, service_role;
 grant execute on function public.upvote_smoking_area(uuid) to anon, authenticated, service_role;
 grant execute on function public.all_smell_reports() to anon, authenticated, service_role;
+grant insert on public.feedback to anon, authenticated;
+grant all on public.feedback to service_role;

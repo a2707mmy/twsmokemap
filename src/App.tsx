@@ -3,13 +3,15 @@ import { HAS_GOOGLE_MAPS, HAS_SUPABASE } from './lib/config';
 import FindView from './features/find/FindView';
 import ReportView from './features/report/ReportView';
 import RulesView from './features/rules/RulesView';
+import ContactView from './features/contact/ContactView';
 
-type Tab = 'find' | 'report' | 'rules';
+type Tab = 'find' | 'report' | 'rules' | 'contact';
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'find', label: '找吸菸區', icon: '🚬' },
   { key: 'report', label: '回報煙味', icon: '💨' },
   { key: 'rules', label: '吸菸規則', icon: '📋' },
+  { key: 'contact', label: '聯繫開發者', icon: '💬' },
 ];
 
 export default function App() {
@@ -63,10 +65,11 @@ export default function App() {
         {tab === 'find' && <FindView />}
         {tab === 'report' && <ReportView />}
         {tab === 'rules' && <RulesView />}
+        {tab === 'contact' && <ContactView />}
       </main>
 
       {/* 手機：底部導覽 */}
-      <nav className="z-20 grid grid-cols-3 border-t border-slate-200 bg-white pb-safe sm:hidden">
+      <nav className="z-20 grid grid-cols-4 border-t border-slate-200 bg-white pb-safe sm:hidden">
         {TABS.map((t) => (
           <button
             key={t.key}

@@ -11,7 +11,7 @@ interface Props {
 /** 底部彈出的吸菸區詳情卡。 */
 export default function AreaDetail({ area, onClose }: Props) {
   const [voted, setVoted] = useState(false);
-  const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${area.lat},${area.lng}`;
+  const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${area.lat},${area.lng}&travelmode=walking`;
 
   return (
     <div className="absolute inset-x-0 bottom-0 z-20 rounded-t-2xl border-t border-slate-200 bg-white p-4 shadow-2xl sm:inset-x-auto sm:bottom-4 sm:left-4 sm:w-80 sm:rounded-2xl sm:border">
