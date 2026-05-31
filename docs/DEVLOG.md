@@ -52,6 +52,28 @@
   - P6：`vercel.json`、部署指南、推上 GitHub（需使用者帳號）、部署後跑 Lighthouse。
   - 使用者待辦：申請 Google Maps 金鑰、建立 Supabase 專案並執行 SQL、跑匯入腳本。
 
+## 2026-05-31｜P6 部署設定與 GitHub 上架
+
+- **完成**：
+  - `vercel.json`（Vite 框架、SPA rewrite）與 [部署指南.md](部署指南.md)（金鑰→資料庫→GitHub→Vercel→驗證五步驟）。
+  - 建立公開 GitHub repo 並推送：<https://github.com/a2707mmy/twsmokemap>。
+- **待辦（使用者帳號相關，需親自操作）**：
+  1. 申請 Google Maps 金鑰並設 referrer 限制 + 預算警示。
+  2. 建立 Supabase 專案、執行 `schema.sql` 與 `policies.sql`、跑 `npm run import:taipei`。
+  3. 於 Vercel 匯入 repo、設定環境變數、Deploy。
+  4. 部署後對正式網址跑 Lighthouse，回填效能數據。
+
 ---
 
-<!-- 後續階段請接續記錄於此 -->
+## 開發歷程總結與踩雷清單
+
+| 困難 | 解法 |
+|------|------|
+| 台灣無全國統一吸菸區開放資料 | 採「台北市開放資料 + 全台眾包」雙軌，台北試點先行 |
+| Google 2025/3 計費改制（取消 $200 抵用金） | 改用每月免費額度，並教學設定 referrer 限制與預算警示防爆量 |
+| 尚無金鑰也要能展示／截圖 | 設計「展示模式」：無金鑰時用內建範例資料 + 示意地圖 fallback |
+| 眾包資料造假風險 | 眾包標「待驗證」、RLS 僅允許新增 pending、煙味改熱區彙總、前端速率限制 |
+| `tsc -b` 與 `noEmit` 衝突 | build 改 `tsc --noEmit && vite build` |
+| Playwright 行動測試需 WebKit | 改用 Chromium 的 Pixel 5 模擬，省下載 |
+
+**成果**：響應式網站、三大功能齊備、單元 + E2E 測試全綠、文件完整、已上架 GitHub。預期金鑰與帳號就緒後即可一鍵部署上線。
