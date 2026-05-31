@@ -32,4 +32,26 @@
 
 ---
 
+## 2026-05-31｜P1–P5 後端、三大功能、測試
+
+- **完成**：
+  - **P1 後端**：Supabase schema（PostGIS、`smoking_areas`/`smell_reports`、`nearby_smoking_areas` RPC、`upvote` 函式）、RLS 權限、台北市開放資料匯入腳本 [scripts/import-taipei.ts](../scripts/import-taipei.ts)。
+  - **P2 找吸菸區**：自動定位、半徑/篩選、附近清單（依距離排序）、地圖標記、詳情卡（導航 + 投票）。`MapView` 支援 Google Maps 與無金鑰示意地圖。
+  - **P3 回報煙味**：地圖選位 + 煙味熱區、三選一描述性情況、時段、備註、送出、成功畫面、前端速率限制。
+  - **P4 吸菸規則**：法規重點 4 卡片 + 常見問答 + 官方來源連結。
+  - **P5 測試**：Vitest 單元 11/11 通過（geo、rateLimit、demo 資料層）；Playwright E2E 10/10 通過（桌機 + 行動）。各功能電腦/手機版截圖留存於 `screenshots/`。
+- **決策**：
+  - E2E 行動測試改用 Chromium 的 Pixel 5 模擬，避免額外下載 WebStreaming/WebKit 瀏覽器（省空間、加快 CI）。
+  - 完整 Lighthouse 效能測試依計畫於部署後對正式網址執行；建置產物極小（JS 47KB gzip），預期分數佳。
+- **困難 & 解法**：
+  - `tsc -b` 與 `noEmit` 衝突 → build 指令改為 `tsc --noEmit && vite build`。
+  - 匯入腳本需 Node 型別 → 安裝 `@types/node`。
+  - dev server 背景啟動因日誌目錄不存在而失敗 → 先建立 `screenshots/` 目錄。
+  - Playwright 行動專案預設用 WebKit（未安裝）而失敗 → 改 Pixel 5（Chromium）。
+- **待辦／風險**：
+  - P6：`vercel.json`、部署指南、推上 GitHub（需使用者帳號）、部署後跑 Lighthouse。
+  - 使用者待辦：申請 Google Maps 金鑰、建立 Supabase 專案並執行 SQL、跑匯入腳本。
+
+---
+
 <!-- 後續階段請接續記錄於此 -->
