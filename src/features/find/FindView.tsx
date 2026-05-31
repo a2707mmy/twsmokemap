@@ -15,22 +15,21 @@ const RADIUS_OPTIONS = [
 ];
 
 export default function FindView() {
-  const { center, status, locate } = useGeolocation();
+  const { center, status, message, locate } = useGeolocation();
   const [radius, setRadius] = useState(DEFAULT_RADIUS_M);
   const [areas, setAreas] = useState<SmokingArea[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false); // 手機底部清單是否展開
 
   // 篩選
   const [kindFilter, setKindFilter] = useState<SmokingAreaKind | 'all'>('all');
   const [officialOnly, setOfficialOnly] = useState(false);
 
-  // 進站自動定位一次
   useEffect(() => {
     locate();
   }, [locate]);
 
-  // 中心或半徑變動時重新查詢
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -55,87 +54,174 @@ export default function FindView() {
 
   const selected = filtered.find((a) => a.id === selectedId) ?? null;
 
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+    setSheetOpen(false); // 選到地點時收起手機清單，改顯示詳情
+  };
+
+  const panelProps = {
+    status,
+    message,
+    locate,
+    radius,
+    setRadius,
+    kindFilter,
+    setKindFilter,
+    officialOnly,
+    setOfficialOnly,
+    count: filtered.length,
+    areas: filtered,
+    selectedId,
+    onSelect: handleSelect,
+    loading,
+  };
+
   return (
-    <div className="flex h-full flex-col sm:flex-row">
-      {/* 側欄（桌機）/ 下半（手機） */}
-      <aside className="order-2 flex min-h-0 flex-1 flex-col border-slate-200 sm:order-1 sm:w-96 sm:flex-none sm:border-r">
-        {/* 控制列 */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3">
-          <button
-            onClick={locate}
-            className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
-          >
-            {status === 'locating' ? '定位中…' : '📍 我的位置'}
-          </button>
-          <label className="ml-auto text-xs text-slate-500">
-            範圍
-            <select
-              value={radius}
-              onChange={(e) => setRadius(Number(e.target.value))}
-              className="ml-1 rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-700"
-            >
-              {RADIUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        {/* 篩選 */}
-        <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2 text-xs">
-          <FilterChip active={kindFilter === 'all'} onClick={() => setKindFilter('all')}>
-            全部
-          </FilterChip>
-          <FilterChip active={kindFilter === 'outdoor'} onClick={() => setKindFilter('outdoor')}>
-            戶外
-          </FilterChip>
-          <FilterChip active={kindFilter === 'indoor'} onClick={() => setKindFilter('indoor')}>
-            室內
-          </FilterChip>
-          <label className="ml-auto flex items-center gap-1 text-slate-500">
-            <input
-              type="checkbox"
-              checked={officialOnly}
-              onChange={(e) => setOfficialOnly(e.target.checked)}
-              className="accent-brand-600"
-            />
-            只看官方
-          </label>
-        </div>
-
-        {status === 'denied' && (
-          <p className="bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            已關閉定位，改以台北市中心顯示。可點「我的位置」重新嘗試。
-          </p>
-        )}
-
-        {/* 清單 */}
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <p className="px-4 pt-3 text-xs text-slate-400">
-            找到 {filtered.length} 個吸菸區
-          </p>
-          <AreaList
-            areas={filtered}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            loading={loading}
-          />
-        </div>
+    <div className="relative flex h-full">
+      {/* 桌機：左側欄 */}
+      <aside className="hidden border-r border-slate-200 sm:flex sm:w-96 sm:flex-col">
+        <AreaPanel {...panelProps} />
       </aside>
 
-      {/* 地圖 */}
-      <div className="relative order-1 min-h-[40vh] flex-1 sm:order-2">
+      {/* 地圖（手機填滿、桌機佔右側） */}
+      <div className="relative flex-1">
         <MapView
           center={center}
           areas={filtered}
           selectedId={selectedId}
-          onSelectArea={setSelectedId}
+          onSelectArea={handleSelect}
         />
+
+        {/* 手機：浮動「我的位置」按鈕 */}
+        <button
+          onClick={locate}
+          aria-label="定位我的位置"
+          className="absolute right-3 bottom-20 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl shadow-lg ring-1 ring-slate-200 active:scale-95 sm:hidden"
+        >
+          {status === 'locating' ? '⏳' : '📍'}
+        </button>
+
+        {/* 詳情卡 */}
         {selected && <AreaDetail area={selected} onClose={() => setSelectedId(null)} />}
+
+        {/* 手機：底部可展開清單（選到地點顯示詳情時隱藏） */}
+        {!selected && (
+          <div className="absolute inset-x-0 bottom-0 z-20 rounded-t-2xl border-t border-slate-200 bg-white shadow-2xl sm:hidden">
+            <button
+              onClick={() => setSheetOpen((v) => !v)}
+              className="flex w-full flex-col items-center gap-1 px-4 pt-2 pb-1"
+              aria-expanded={sheetOpen}
+            >
+              <span className="h-1 w-10 rounded-full bg-slate-300" aria-hidden />
+              <span className="flex w-full items-center justify-between">
+                <span className="text-sm font-semibold text-slate-800">
+                  附近吸菸區 · {filtered.length} 個
+                </span>
+                <span
+                  className={`text-slate-400 transition-transform ${sheetOpen ? 'rotate-180' : ''}`}
+                  aria-hidden
+                >
+                  ⌃
+                </span>
+              </span>
+            </button>
+            {sheetOpen && (
+              <div className="flex max-h-[55vh] flex-col">
+                <AreaPanel {...panelProps} hideCount />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+// ── 控制列 + 篩選 + 清單（桌機側欄與手機底部共用） ──────────────
+interface AreaPanelProps {
+  status: string;
+  message: string | null;
+  locate: () => void;
+  radius: number;
+  setRadius: (n: number) => void;
+  kindFilter: SmokingAreaKind | 'all';
+  setKindFilter: (k: SmokingAreaKind | 'all') => void;
+  officialOnly: boolean;
+  setOfficialOnly: (b: boolean) => void;
+  count: number;
+  areas: SmokingArea[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  loading: boolean;
+  hideCount?: boolean;
+}
+
+function AreaPanel(p: AreaPanelProps) {
+  return (
+    <>
+      {/* 控制列 */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3">
+        <button
+          onClick={p.locate}
+          className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+        >
+          {p.status === 'locating' ? '定位中…' : '📍 我的位置'}
+        </button>
+        <label className="ml-auto text-xs text-slate-500">
+          範圍
+          <select
+            value={p.radius}
+            onChange={(e) => p.setRadius(Number(e.target.value))}
+            className="ml-1 rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-700"
+          >
+            {RADIUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {/* 篩選 */}
+      <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2 text-xs">
+        <FilterChip active={p.kindFilter === 'all'} onClick={() => p.setKindFilter('all')}>
+          全部
+        </FilterChip>
+        <FilterChip active={p.kindFilter === 'outdoor'} onClick={() => p.setKindFilter('outdoor')}>
+          戶外
+        </FilterChip>
+        <FilterChip active={p.kindFilter === 'indoor'} onClick={() => p.setKindFilter('indoor')}>
+          室內
+        </FilterChip>
+        <label className="ml-auto flex items-center gap-1 text-slate-500">
+          <input
+            type="checkbox"
+            checked={p.officialOnly}
+            onChange={(e) => p.setOfficialOnly(e.target.checked)}
+            className="accent-brand-600"
+          />
+          只看官方
+        </label>
+      </div>
+
+      {(p.status === 'denied' || p.status === 'unavailable') && p.message && (
+        <p className="bg-amber-50 px-3 py-2 text-xs text-amber-700">{p.message}</p>
+      )}
+
+      {/* 清單 */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {!p.hideCount && (
+          <p className="px-4 pt-3 text-xs text-slate-400">找到 {p.count} 個吸菸區</p>
+        )}
+        <AreaList
+          areas={p.areas}
+          selectedId={p.selectedId}
+          onSelect={p.onSelect}
+          loading={p.loading}
+        />
+      </div>
+    </>
   );
 }
 

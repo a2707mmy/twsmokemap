@@ -1,4 +1,5 @@
-import { APIProvider, AdvancedMarker, Map, Pin } from '@vis.gl/react-google-maps';
+import { useEffect, useRef } from 'react';
+import { APIProvider, AdvancedMarker, Map, Pin, useMap } from '@vis.gl/react-google-maps';
 import { GOOGLE_MAPS_API_KEY, HAS_GOOGLE_MAPS } from '../lib/config';
 import type { LatLng, SmellReport, SmokingArea } from '../lib/types';
 
@@ -24,6 +25,21 @@ export default function MapView(props: MapViewProps) {
   return HAS_GOOGLE_MAPS ? <GoogleMapView {...props} /> : <SchematicMap {...props} />;
 }
 
+// 當定位（center）改變時，把地圖平移過去（讓「我的位置」真的會移動地圖）
+function MapController({ center }: { center: LatLng }) {
+  const map = useMap();
+  const last = useRef<string>('');
+  useEffect(() => {
+    if (!map) return;
+    const key = `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`;
+    if (key !== last.current) {
+      last.current = key;
+      map.panTo(center);
+    }
+  }, [map, center]);
+  return null;
+}
+
 // ── Google Maps ────────────────────────────────────────────
 function GoogleMapView({
   center,
@@ -41,13 +57,16 @@ function GoogleMapView({
         defaultCenter={center}
         defaultZoom={15}
         gestureHandling="greedy"
-        disableDefaultUI={false}
+        mapTypeControl={false}
+        streetViewControl={false}
+        fullscreenControl={false}
         mapId="twsmokemap"
         onClick={(e) => {
           const ll = e.detail.latLng;
           if (ll && onPick) onPick({ lat: ll.lat, lng: ll.lng });
         }}
       >
+        <MapController center={center} />
         {/* 使用者位置 */}
         <AdvancedMarker position={center} title="你的位置">
           <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow" />
