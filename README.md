@@ -6,7 +6,7 @@
 2. **回報煙味** — 非吸菸者標記常聞到煙味的地點，形成熱區。
 3. **宣導規則** — 簡明說明台灣菸害防制法的禁菸／吸菸規定。
 
-> 詳細規劃見 [docs/計畫書.md](docs/計畫書.md)，開發歷程見 [docs/DEVLOG.md](docs/DEVLOG.md)。
+> 詳細規劃見 [docs/計畫書.md](docs/計畫書.md)、上架步驟見 [docs/部署指南.md](docs/部署指南.md)、開發歷程見 [docs/DEVLOG.md](docs/DEVLOG.md)、測試結果見 [docs/測試報告.md](docs/測試報告.md)。
 
 ## 技術堆疊
 
