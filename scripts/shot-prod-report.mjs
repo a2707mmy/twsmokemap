@@ -1,0 +1,14 @@
+import { chromium, devices } from '@playwright/test';
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ ...devices['Pixel 5'] });
+const page = await ctx.newPage();
+const errs = [];
+page.on('pageerror', (e) => errs.push(e.message));
+await page.goto('https://twsmokemap.vercel.app/', { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+await page.getByRole('button', { name: '回報煙味' }).click();
+await page.waitForTimeout(2500);
+await page.screenshot({ path: 'screenshots/prod-report.png' });
+console.log('pageerror:', errs.length ? errs.join(' | ') : '(無)');
+await ctx.close();
+await browser.close();

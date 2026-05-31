@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import MapView from '../../components/MapView';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { fetchAllAreas } from '../../lib/data';
-import type { Bounds, SmokingArea, SmokingAreaKind } from '../../lib/types';
+import type { Bounds, SmokingArea } from '../../lib/types';
 import AreaList from './AreaList';
 import AreaDetail from './AreaDetail';
 
@@ -18,10 +18,6 @@ export default function FindView() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false); // 手機底部清單是否展開
-
-  // 篩選
-  const [kindFilter, setKindFilter] = useState<SmokingAreaKind | 'all'>('all');
-  const [officialOnly, setOfficialOnly] = useState(false);
 
   useEffect(() => {
     locate();
@@ -40,16 +36,10 @@ export default function FindView() {
     };
   }, [center]);
 
-  // 顯示：目前地圖視野內 + 套用篩選（視野未知前先全部顯示）
+  // 顯示：目前地圖視野內的吸菸點（視野未知前先全部顯示）
   const visible = useMemo(
-    () =>
-      allAreas.filter(
-        (a) =>
-          (!bounds || inBounds(a, bounds)) &&
-          (kindFilter === 'all' || a.kind === kindFilter) &&
-          (!officialOnly || a.source === 'official'),
-      ),
-    [allAreas, bounds, kindFilter, officialOnly],
+    () => allAreas.filter((a) => !bounds || inBounds(a, bounds)),
+    [allAreas, bounds],
   );
 
   const selected = visible.find((a) => a.id === selectedId) ?? null;
@@ -63,10 +53,6 @@ export default function FindView() {
     status,
     message,
     locate,
-    kindFilter,
-    setKindFilter,
-    officialOnly,
-    setOfficialOnly,
     count: visible.length,
     areas: visible,
     selectedId,
@@ -151,10 +137,6 @@ interface AreaPanelProps {
   status: string;
   message: string | null;
   locate: () => void;
-  kindFilter: SmokingAreaKind | 'all';
-  setKindFilter: (k: SmokingAreaKind | 'all') => void;
-  officialOnly: boolean;
-  setOfficialOnly: (b: boolean) => void;
   count: number;
   areas: SmokingArea[];
   selectedId: string | null;
@@ -177,28 +159,6 @@ function AreaPanel(p: AreaPanelProps) {
         <span className="ml-auto text-xs text-slate-400">移動地圖即可看不同區域</span>
       </div>
 
-      {/* 篩選 */}
-      <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2 text-xs">
-        <FilterChip active={p.kindFilter === 'all'} onClick={() => p.setKindFilter('all')}>
-          全部
-        </FilterChip>
-        <FilterChip active={p.kindFilter === 'outdoor'} onClick={() => p.setKindFilter('outdoor')}>
-          戶外
-        </FilterChip>
-        <FilterChip active={p.kindFilter === 'indoor'} onClick={() => p.setKindFilter('indoor')}>
-          室內
-        </FilterChip>
-        <label className="ml-auto flex items-center gap-1 text-slate-500">
-          <input
-            type="checkbox"
-            checked={p.officialOnly}
-            onChange={(e) => p.setOfficialOnly(e.target.checked)}
-            className="accent-brand-600"
-          />
-          只看官方
-        </label>
-      </div>
-
       {(p.status === 'denied' || p.status === 'unavailable') && p.message && (
         <p className="bg-amber-50 px-3 py-2 text-xs text-amber-700">{p.message}</p>
       )}
@@ -216,26 +176,5 @@ function AreaPanel(p: AreaPanelProps) {
         />
       </div>
     </>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-full px-3 py-1 font-medium transition ${
-        active ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-      }`}
-    >
-      {children}
-    </button>
   );
 }

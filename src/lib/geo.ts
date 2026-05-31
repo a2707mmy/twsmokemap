@@ -19,3 +19,15 @@ export function formatDistance(m: number): string {
   if (m < 1000) return `${Math.round(m)} 公尺`;
   return `${(m / 1000).toFixed(1)} 公里`;
 }
+
+/**
+ * 以步行時間呈現距離（一般步行約 80 公尺/分鐘 ≈ 4.8 km/h）。
+ * 太遠（超過約 45 分鐘）則改顯示公里數。
+ */
+export function formatWalk(m: number): string {
+  if (!Number.isFinite(m)) return '';
+  if (m < 80) return '步行 1 分鐘內';
+  const mins = Math.round(m / 80);
+  if (mins <= 45) return `步行約 ${mins} 分鐘`;
+  return `${(m / 1000).toFixed(1)} 公里`;
+}

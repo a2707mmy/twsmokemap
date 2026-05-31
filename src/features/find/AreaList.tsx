@@ -1,6 +1,6 @@
-import { formatDistance } from '../../lib/geo';
+import { formatWalk } from '../../lib/geo';
 import type { SmokingArea } from '../../lib/types';
-import { KindBadge, SourceBadge } from '../../components/Badge';
+import { SourceBadge } from '../../components/Badge';
 
 interface Props {
   areas: SmokingArea[];
@@ -44,14 +44,13 @@ export default function AreaList({ areas, selectedId, onSelect, loading }: Props
               <span className="font-medium text-slate-900">{a.name}</span>
               {typeof a.distance_m === 'number' && (
                 <span className="shrink-0 text-sm font-medium text-brand-600">
-                  {formatDistance(a.distance_m)}
+                  {formatWalk(a.distance_m)}
                 </span>
               )}
             </div>
             {a.address && <span className="text-sm text-slate-500">{a.address}</span>}
             <div className="mt-0.5 flex flex-wrap gap-1.5">
               <SourceBadge source={a.source} />
-              <KindBadge kind={a.kind} />
             </div>
           </button>
         </li>

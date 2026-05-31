@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { distanceMeters, formatDistance } from './geo';
+import { distanceMeters, formatDistance, formatWalk } from './geo';
 
 describe('distanceMeters', () => {
   it('同一點距離為 0', () => {
@@ -31,5 +31,20 @@ describe('formatDistance', () => {
   it('大於等於 1 公里顯示公里（1 位小數）', () => {
     expect(formatDistance(1000)).toBe('1.0 公里');
     expect(formatDistance(2500)).toBe('2.5 公里');
+  });
+});
+
+describe('formatWalk', () => {
+  it('很近顯示 1 分鐘內', () => {
+    expect(formatWalk(50)).toBe('步行 1 分鐘內');
+  });
+
+  it('一般距離顯示步行分鐘數（80 公尺/分鐘）', () => {
+    expect(formatWalk(400)).toBe('步行約 5 分鐘');
+    expect(formatWalk(800)).toBe('步行約 10 分鐘');
+  });
+
+  it('太遠改顯示公里', () => {
+    expect(formatWalk(5000)).toBe('5.0 公里');
   });
 });

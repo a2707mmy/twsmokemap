@@ -101,6 +101,12 @@
 - 原因：`fetchSmellReports` 用 `select('*')` 取回，但座標存在 PostGIS `location` 欄位、沒有 lat/lng → `AdvancedMarker` 收到 `lat: undefined` 丟出 `InvalidValueError`，React 無 error boundary 整棵卸載 → 空白。demo 範例有 lat/lng 故只在線上真實資料出現。
 - 解法：新增 `all_smell_reports()` RPC（st_y/st_x 轉 lat/lng），`fetchSmellReports` 改用它；並在 `MapView` 加 `hasValidCoords` 防呆，座標無效就跳過標記（即使資料異常也不再崩潰）。RPC 未建立時錯誤被 catch → 回報頁仍正常、只是暫無熱區。
 
+### 介面精簡（使用者回饋）
+- 移除「全部/戶外/室內」種類篩選與「只看官方」篩選（含清單的室內/戶外標籤），介面更乾淨。
+- 距離改以**步行時間**呈現（`formatWalk`，約 80 公尺/分鐘；超過約 45 分鐘改顯示公里）。
+- 地圖標記配色維持：官方=青藍、使用者回報=橘色（保留來源徽章）。
+- 清掉測試誤插入的 2 筆煙味回報，資料庫回到乾淨狀態（201 吸菸區 / 0 回報）。
+
 ---
 
 ## 2026-05-31｜上線前補強：資料匯入與 SEO

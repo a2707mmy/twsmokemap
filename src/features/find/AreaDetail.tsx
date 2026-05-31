@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { formatDistance } from '../../lib/geo';
+import { formatWalk } from '../../lib/geo';
 import type { SmokingArea } from '../../lib/types';
-import { KindBadge, SourceBadge } from '../../components/Badge';
+import { SourceBadge } from '../../components/Badge';
 
 interface Props {
   area: SmokingArea;
@@ -26,12 +26,11 @@ export default function AreaDetail({ area, onClose }: Props) {
         </button>
       </div>
 
-      <div className="mt-1 flex flex-wrap gap-1.5">
+      <div className="mt-1 flex flex-wrap items-center gap-1.5">
         <SourceBadge source={area.source} />
-        <KindBadge kind={area.kind} />
         {typeof area.distance_m === 'number' && (
           <span className="text-xs font-medium text-brand-600">
-            距你 {formatDistance(area.distance_m)}
+            {formatWalk(area.distance_m)}
           </span>
         )}
       </div>
