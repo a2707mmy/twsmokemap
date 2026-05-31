@@ -130,6 +130,10 @@ export default function ContactView() {
         <p className="text-[11px] leading-relaxed text-slate-400">
           我們不會公開你的訊息與聯絡方式，僅作為改善網站之用。
         </p>
+
+        <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-500">
+          這個網站是出於興趣用政府開放資料製作，非常樂於接受建議，但不要害我惹上麻煩 🙏
+        </p>
       </div>
     </div>
   );
