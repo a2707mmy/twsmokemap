@@ -99,3 +99,13 @@ language sql
 as $$
   update public.smoking_areas set upvotes = upvotes + 1 where id = area_id;
 $$;
+
+-- 6. 授權（GRANT）--------------------------------------------
+-- 新版 Supabase 金鑰（publishable/secret）對應的角色不會自動取得資料表權限，
+-- 需明確授權；實際存取仍受上方 RLS 政策約束。
+grant usage on schema public to anon, authenticated, service_role;
+grant select, insert on public.smoking_areas, public.smell_reports to anon, authenticated;
+grant all on public.smoking_areas, public.smell_reports to service_role;
+grant execute on function public.nearby_smoking_areas(double precision, double precision, double precision)
+  to anon, authenticated, service_role;
+grant execute on function public.upvote_smoking_area(uuid) to anon, authenticated, service_role;
