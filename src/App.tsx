@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { HAS_GOOGLE_MAPS, HAS_SUPABASE } from './lib/config';
 import FindView from './features/find/FindView';
+import ReportView from './features/report/ReportView';
+import RulesView from './features/rules/RulesView';
 
 type Tab = 'find' | 'report' | 'rules';
 
@@ -58,7 +60,9 @@ export default function App() {
 
       {/* 內容區 */}
       <main className="relative flex-1 overflow-hidden">
-        {tab === 'find' ? <FindView /> : <PlaceholderView tab={tab} />}
+        {tab === 'find' && <FindView />}
+        {tab === 'report' && <ReportView />}
+        {tab === 'rules' && <RulesView />}
       </main>
 
       {/* 手機：底部導覽 */}
@@ -78,25 +82,6 @@ export default function App() {
           </button>
         ))}
       </nav>
-    </div>
-  );
-}
-
-/** P0 暫用佔位畫面，後續階段以實際功能元件取代。 */
-function PlaceholderView({ tab }: { tab: Tab }) {
-  const info: Record<Tab, { title: string; desc: string }> = {
-    find: { title: '找吸菸區', desc: '地圖與附近吸菸區清單（建置中 — P2）' },
-    report: { title: '回報煙味', desc: '標記常聞到煙味的地點（建置中 — P3）' },
-    rules: { title: '吸菸規則', desc: '菸害防制法重點宣導（建置中 — P4）' },
-  };
-  const v = info[tab];
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
-      <div className="text-4xl" aria-hidden>
-        {TABS.find((t) => t.key === tab)?.icon}
-      </div>
-      <h2 className="text-lg font-bold text-slate-800">{v.title}</h2>
-      <p className="max-w-xs text-sm text-slate-500">{v.desc}</p>
     </div>
   );
 }
