@@ -1,0 +1,51 @@
+# 防止 Supabase 免費方案因閒置（約 7 天無活動）被自動暫停。
+# 每 3 天對資料庫做一次輕量查詢；若查詢失敗（例如專案已被暫停），
+# 這個 workflow 會失敗，GitHub 會寄信通知 repo 擁有者。
+#
+# 需要的 repo secrets（Settings → Secrets and variables → Actions）：
+#   SUPABASE_URL       例：https://xxxx.supabase.co
+#   SUPABASE_ANON_KEY  前端用的 anon / publishable 金鑰（切勿放 service_role）
+
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '17 3 */3 * *' # 每 3 天，UTC 03:17（台灣 11:17）
+  workflow_dispatch: # 可在 Actions 頁手動執行
+
+permissions:
+  actions: write # 供最後一步重新啟用本 workflow
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 查詢 Supabase（讀取 1 筆吸菸區）
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::尚未設定 SUPABASE_URL 或 SUPABASE_ANON_KEY secret"
+            exit 1
+          fi
+          status=$(curl -sS -o body.json -w '%{http_code}' \
+            --retry 3 --retry-delay 15 --retry-all-errors \
+            "${SUPABASE_URL%/}/rest/v1/smoking_areas?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}") || status="000"
+          echo "HTTP ${status}"
+          cat body.json 2>/dev/null; echo
+          if [ "$status" != "200" ]; then
+            echo "::error::Supabase 查詢失敗（HTTP ${status}），專案可能已被暫停，請到 Supabase 後台按 Restore。"
+            exit 1
+          fi
+
+      # 公開 repo 若 60 天沒有 commit，GitHub 會自動停用排程 workflow；
+      # 透過 API 重新啟用可重置計時，避免排程默默停掉。
+      - name: 保持排程啟用
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT "repos/${{ github.repository }}/actions/workflows/keep-alive.yml/enable"
